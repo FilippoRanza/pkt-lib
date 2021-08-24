@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[cfg(test)]
 extern crate quickcheck;
 #[cfg(test)]
@@ -8,6 +10,23 @@ extern crate quickcheck_macros;
 pub enum ParseError {
     WrongLen { expected: usize, actual: usize },
     Unknown { value: u8 },
+}
+
+impl std::error::Error for ParseError {}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Unknown { value } => {
+                write!(f, "Unknown byte value. Cannot parse byte: {}.", value)
+            }
+            Self::WrongLen { expected, actual } => write!(
+                f,
+                "Input buffer has wrong length. Expected: {} - Actual: {}",
+                expected, actual
+            ),
+        }
+    }
 }
 
 impl ParseError {
