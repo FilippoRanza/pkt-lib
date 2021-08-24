@@ -1,6 +1,8 @@
-use crate::{check_len, Result};
+use crate::Result;
 
 const PKT_SIZE: usize = 8;
+
+pub type NewItemPkt = [u8; PKT_SIZE];
 
 #[derive(Debug, PartialEq)]
 pub struct NewItemInfo {
@@ -8,7 +10,7 @@ pub struct NewItemInfo {
     pub location: u32,
 }
 
-pub fn make_new_item_pkt(info: NewItemInfo) -> [u8; PKT_SIZE] {
+pub fn make_new_item_pkt(info: NewItemInfo) -> NewItemPkt {
     let mut buff = [0; PKT_SIZE];
     let id = info.id.to_be_bytes();
     let loc = info.location.to_be_bytes();
@@ -17,8 +19,7 @@ pub fn make_new_item_pkt(info: NewItemInfo) -> [u8; PKT_SIZE] {
     buff
 }
 
-pub fn parse_new_item_pkt(buff: &[u8]) -> Result<NewItemInfo> {
-    check_len(buff, PKT_SIZE)?;
+pub fn parse_new_item_pkt(buff: &NewItemPkt) -> Result<NewItemInfo> {
     let mut id = [0; 4];
     let mut loc = [0; 4];
 
@@ -34,20 +35,6 @@ pub fn parse_new_item_pkt(buff: &[u8]) -> Result<NewItemInfo> {
 mod test {
 
     use super::*;
-    use crate::ParseError;
-
-    #[test]
-    fn test_wrong_size_pkt() {
-        let pkt: Vec<u8> = (0..10).collect();
-        let res = parse_new_item_pkt(&pkt);
-        assert_eq!(
-            res,
-            Err(ParseError::WrongLen {
-                expect: PKT_SIZE,
-                got: pkt.len()
-            })
-        );
-    }
 
     #[quickcheck]
     fn test_conversion(id: u32, location: u32) -> bool {

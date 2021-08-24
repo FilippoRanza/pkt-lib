@@ -1,7 +1,7 @@
-use crate::{check_len, ParseError, Result};
+use crate::{ParseError, Result};
 
 const PKT_SIZE: usize = 5;
-type Pkt = [u8; PKT_SIZE];
+pub type ItemReachPkt = [u8; PKT_SIZE];
 
 #[derive(Debug, PartialEq)]
 pub enum ItemStatus {
@@ -9,13 +9,12 @@ pub enum ItemStatus {
     OutReach(u32),
 }
 
-pub fn make_reach_packet(reach: ItemStatus) -> Pkt {
+pub fn make_reach_pkt(reach: ItemStatus) -> ItemReachPkt {
     let (b, v) = reach.into_byte();
     make_buffer(b, v)
 }
 
-pub fn parse_reach_packet(pkt: &[u8]) -> Result<ItemStatus> {
-    check_len(pkt, PKT_SIZE)?;
+pub fn parse_reach_pkt(pkt: &ItemReachPkt) -> Result<ItemStatus> {
     let byte = pkt[0];
     let mut value = [0; 4];
     value.clone_from_slice(&pkt[1..]);
@@ -26,8 +25,8 @@ pub fn parse_reach_packet(pkt: &[u8]) -> Result<ItemStatus> {
 const IN_REACH: u8 = 0;
 const OUT_REACH: u8 = 1;
 
-fn make_buffer(byte: u8, value: u32) -> Pkt {
-    let mut out = Pkt::default();
+fn make_buffer(byte: u8, value: u32) -> ItemReachPkt {
+    let mut out = ItemReachPkt::default();
     out[0] = byte;
     let value = value.to_be_bytes();
     out[1..].clone_from_slice(&value);
@@ -57,30 +56,16 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_long_packet() {
-        let len = 10;
-        let pkt: Vec<u8> = (0..len).collect();
-        let result = parse_reach_packet(&pkt);
-        assert_eq!(
-            result,
-            Err(ParseError::WrongLen {
-                expect: PKT_SIZE,
-                got: pkt.len()
-            })
-        )
-    }
-
-    #[test]
     fn test_unknown_byte() {
         let pkt = [2, 0, 0, 0, 0];
-        let result = parse_reach_packet(&pkt);
+        let result = parse_reach_pkt(&pkt);
         assert_eq!(result, Err(ParseError::Unknown { value: 2 }));
     }
 
     #[quickcheck]
     fn test_conversion(in_reach: bool, value: u32) -> bool {
         let input = make_item_status(in_reach, value);
-        let result = parse_reach_packet(&make_reach_packet(input)).unwrap();
+        let result = parse_reach_pkt(&make_reach_pkt(input)).unwrap();
         let expect = make_item_status(in_reach, value);
         result == expect
     }
