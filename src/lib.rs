@@ -6,7 +6,7 @@ extern crate quickcheck_macros;
 
 #[derive(Debug, PartialEq)]
 pub enum ParseError {
-    WrongLen { expect: usize, got: usize },
+    WrongLen { expected: usize, actual: usize },
     Unknown { value: u8 },
 }
 
