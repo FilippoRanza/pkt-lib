@@ -42,3 +42,9 @@ pub use item_reach_pkt::{make_reach_pkt, parse_reach_pkt, ItemReachPkt, ItemStat
 
 mod new_item_pkt;
 pub use new_item_pkt::{make_new_item_pkt, parse_new_item_pkt, NewItemInfo, NewItemPkt};
+
+mod take_item_pkt;
+pub use take_item_pkt::{make_take_item_pkt, parse_take_item_pkt, TakeItemPkt};
+
+mod arm_state_pkt;
+pub use arm_state_pkt::{make_arm_state_pkt, parse_arm_state_pkt, ArmState, ArmStatePkt};
