@@ -1,0 +1,86 @@
+
+use std::net::{IpAddr, SocketAddr, UdpSocket};
+use std::sync::mpsc;
+use std::thread::{spawn, JoinHandle};
+
+type Handle = JoinHandle<std::io::Result<()>>;
+type Receiver<T> = mpsc::Receiver<RecvInfo<T>>;
+
+
+pub struct ListenerController<T> {
+    send: mpsc::Sender<()>,
+    recv: Receiver<T>
+}
+
+impl<T> ListenerController<T> {
+    fn new(send: mpsc::Sender<()>, recv: Receiver<T>) -> Self {
+        Self {
+            send,
+            recv
+        }
+    }
+
+    pub fn stop(&self) {
+        self.send.send(()).unwrap();
+    }
+
+    pub fn try_recv(&self) -> Result<RecvInfo<T>, mpsc::TryRecvError> {
+        self.recv.try_recv()
+    }
+
+}
+
+pub struct RecvInfo<T> {
+    pub data: T,
+    pub addr: SocketAddr,
+}
+
+pub fn create_udp_listener<F, T, K>(ip: IpAddr, port: u16, f: &'static F) -> (ListenerController<K>, Handle)
+where
+    F: Fn(&T) -> K + Sync,
+    T: Default + AsMut<[u8]>,
+    K: Send + Sync + 'static,
+{
+    let (info_trans, info_recv) = mpsc::channel();
+    let (control_trans, control_recv) = mpsc::channel();
+    let addr = SocketAddr::new(ip, port);
+    let handle = start_udp_listener(addr, f, info_trans, control_recv);
+
+    let recv = ListenerController::new(control_trans, info_recv);
+    (recv, handle)
+}
+
+fn start_udp_listener<F, T, K>(
+    addr: SocketAddr,
+    f: &'static F,
+    send: mpsc::Sender<RecvInfo<K>>,
+    recv: mpsc::Receiver<()>
+) -> Handle
+where
+    F: Fn(&T) -> K + Sync,
+    T: Default + AsMut<[u8]>,
+    K: Send + Sync + 'static,
+{
+    spawn(move || {
+        let sock = UdpSocket::bind(addr)?;
+        let mut buff = T::default();
+        while should_continue(&recv) {
+    
+            let (amt, addr) = sock.recv_from(buff.as_mut())?;
+            if amt > 0 {
+            
+            let data = f(&buff);
+            let info = RecvInfo { data, addr };
+            send.send(info).unwrap();
+            }
+        }
+
+        Ok(())
+    })
+}
+
+
+fn should_continue(recv: &mpsc::Receiver<()>) -> bool {
+    let tmp = recv.try_recv();
+    matches!{tmp, Err(mpsc::TryRecvError::Empty)}
+}
