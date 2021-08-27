@@ -1,8 +1,10 @@
-use std::net::{IpAddr, SocketAddr, UdpSocket};
+use std::net::{IpAddr, SocketAddr};
 use std::sync::mpsc;
-use std::thread::{spawn, JoinHandle};
 
-type Handler = JoinHandle<std::io::Result<()>>;
+use tokio::net::UdpSocket;
+
+
+type Handler = tokio::task::JoinHandle<std::io::Result<()>>;
 type Receiver<T> = mpsc::Receiver<RecvInfo<T>>;
 
 pub struct ListenerController<T> {
@@ -38,7 +40,7 @@ pub struct RecvInfo<T> {
 pub fn create_udp_listener<F, T, K>(ip: IpAddr, port: u16, f: &'static F) -> ListenerController<K>
 where
     F: Fn(&T) -> K + Sync,
-    T: Default + AsMut<[u8]>,
+    T: Default + AsMut<[u8]> + Send,
     K: Send + Sync + 'static,
 {
     let (info_trans, info_recv) = mpsc::channel();
@@ -57,14 +59,14 @@ fn start_udp_listener<F, T, K>(
 ) -> Handler
 where
     F: Fn(&T) -> K + Sync,
-    T: Default + AsMut<[u8]>,
+    T:  Default + AsMut<[u8]> + Send,
     K: Send + Sync + 'static,
 {
-    spawn(move || {
-        let sock = UdpSocket::bind(addr)?;
+    tokio::spawn( async move {
+        let sock = UdpSocket::bind(addr).await?;
         let mut buff = T::default();
         while should_continue(&recv) {
-            let (amt, addr) = sock.recv_from(buff.as_mut())?;
+            let (amt, addr) = sock.recv_from(buff.as_mut()).await?;
             if amt > 0 {
                 let data = f(&buff);
                 let info = RecvInfo { data, addr };
