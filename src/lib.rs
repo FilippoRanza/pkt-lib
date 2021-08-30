@@ -47,7 +47,7 @@ mod take_item_pkt;
 pub use take_item_pkt::{make_take_item_pkt, parse_take_item_pkt, TakeItemPkt};
 
 mod arm_state_pkt;
-pub use arm_state_pkt::{make_arm_state_pkt, parse_arm_state_pkt, ArmState, ArmStatePkt};
+pub use arm_state_pkt::{make_arm_state_pkt, parse_arm_state_pkt, ArmInfo, ArmState, ArmStatePkt};
 
 #[cfg(feature = "listener")]
 pub mod listener;
