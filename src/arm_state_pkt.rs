@@ -5,8 +5,8 @@ pub type ArmStatePkt = [u8; PKT_SIZE];
 
 #[derive(Debug, PartialEq)]
 pub struct ArmInfo {
-    arm_id: u32,
-    status: ArmState,
+    pub arm_id: u32,
+    pub status: ArmState,
 }
 
 #[derive(Debug, PartialEq)]
