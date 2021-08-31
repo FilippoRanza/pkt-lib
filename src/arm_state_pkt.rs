@@ -73,12 +73,6 @@ mod test {
     fn test_arm_state_conversion(waiting: bool, value: Option<u32>, arm_id: u32) -> bool {
         let correct = into_arm_info(waiting, value, arm_id);
         let pkt = make_arm_state_pkt(&correct);
-        if value.is_some() {
-            assert_eq!(pkt[0], WORKING)
-        } else {
-            assert_eq!(pkt[1], READY)
-        }
-
         let result = parse_arm_state_pkt(&pkt).unwrap();
         result == correct
     }
