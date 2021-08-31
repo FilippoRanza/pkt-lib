@@ -12,6 +12,7 @@ pub struct ArmInfo {
 #[derive(Debug, PartialEq)]
 pub enum ArmState {
     Ready,
+    Waiting,
     Working(u32),
 }
 
@@ -19,6 +20,7 @@ pub fn make_arm_state_pkt(state: &ArmInfo) -> ArmStatePkt {
     let mut pkt = ArmStatePkt::default();
     match state.status {
         ArmState::Ready => ready_into_pkt(state.arm_id, &mut pkt),
+        ArmState::Waiting => waiting_into_pkt(state.arm_id, &mut pkt),
         ArmState::Working(value) => working_into_pkt(value, state.arm_id, &mut pkt),
     }
     pkt
@@ -36,15 +38,21 @@ fn parse_arm_status(first: u8, working_val: u32) -> Result<ArmState> {
     match first {
         READY => Ok(ArmState::Ready),
         WORKING => Ok(ArmState::Working(working_val)),
+        WAITING => Ok(ArmState::Waiting),
         other => Err(ParseError::unknown_byte(other)),
     }
 }
 
 const READY: u8 = 0;
 const WORKING: u8 = 1;
+const WAITING: u8 = 2;
 
 fn working_into_pkt(value: u32, index: u32, pkt: &mut ArmStatePkt) {
     build_packet(WORKING, value, index, pkt);
+}
+
+fn waiting_into_pkt(index: u32, pkt: &mut ArmStatePkt) {
+    build_packet(WAITING, 0, index, pkt);
 }
 
 fn ready_into_pkt(index: u32, pkt: &mut ArmStatePkt) {
@@ -62,8 +70,8 @@ mod test {
     use super::*;
 
     #[quickcheck]
-    fn test_arm_state_conversion(value: Option<u32>, arm_id: u32) -> bool {
-        let correct = into_arm_info(value, arm_id);
+    fn test_arm_state_conversion(waiting: bool, value: Option<u32>, arm_id: u32) -> bool {
+        let correct = into_arm_info(waiting, value, arm_id);
         let pkt = make_arm_state_pkt(&correct);
         if value.is_some() {
             assert_eq!(pkt[0], WORKING)
@@ -75,8 +83,14 @@ mod test {
         result == correct
     }
 
-    fn into_arm_info(opt: Option<u32>, arm_id: u32) -> ArmInfo {
-        let status = opt.map(|v| ArmState::Working(v)).unwrap_or(ArmState::Ready);
+
+    fn into_arm_info(waiting: bool, opt: Option<u32>, arm_id: u32) -> ArmInfo {
+        let default = if waiting {
+            ArmState::Waiting
+        } else {
+            ArmState::Ready
+        };
+        let status = opt.map(|v| ArmState::Working(v)).unwrap_or(default);
         ArmInfo { arm_id, status }
     }
 }
