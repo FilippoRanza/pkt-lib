@@ -49,8 +49,20 @@ pub use take_item_pkt::{make_take_item_pkt, parse_take_item_pkt, TakeItemPkt};
 mod arm_state_pkt;
 pub use arm_state_pkt::{make_arm_state_pkt, parse_arm_state_pkt, ArmInfo, ArmState, ArmStatePkt};
 
-#[cfg(feature = "listener")]
+#[cfg(listener)]
 pub mod listener;
+
+pub trait IntoData<P>: Send + Sync + 'static
+where
+    P: Packet,
+{
+    fn into_data(p: &P) -> Result<Self>
+    where
+        Self: Sized;
+}
+
+pub trait Packet: Default + AsMut<[u8]> + Send {}
+pub trait Data: Send + Sync + 'static {}
 
 struct BuffConverter<'a> {
     buff: &'a [u8],

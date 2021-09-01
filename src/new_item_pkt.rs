@@ -1,13 +1,20 @@
-use crate::Result;
+use crate::{IntoData, Packet, Result};
 
 const PKT_SIZE: usize = 8;
 
 pub type NewItemPkt = [u8; PKT_SIZE];
+impl Packet for NewItemPkt {}
 
 #[derive(Debug, PartialEq)]
 pub struct NewItemInfo {
     pub id: u32,
     pub location: u32,
+}
+
+impl IntoData<NewItemPkt> for NewItemInfo {
+    fn into_data(p: &NewItemPkt) -> Result<Self> {
+        parse_new_item_pkt(p)
+    }
 }
 
 pub fn make_new_item_pkt(info: NewItemInfo) -> NewItemPkt {

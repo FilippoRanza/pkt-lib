@@ -1,12 +1,19 @@
-use crate::{insert_bytes, BuffConverter, ParseError, Result};
+use crate::{insert_bytes, BuffConverter, IntoData, Packet, ParseError, Result};
 
 const PKT_SIZE: usize = 3 * 4 + 1;
 pub type ItemReachPkt = [u8; PKT_SIZE];
+impl Packet for ItemReachPkt {}
 
 #[derive(Debug, PartialEq)]
 pub enum ItemStatus {
     InReach(ItemInfo),
     OutReach(ItemInfo),
+}
+
+impl IntoData<ItemReachPkt> for ItemStatus {
+    fn into_data(p: &ItemReachPkt) -> Result<Self> {
+        parse_reach_pkt(p)
+    }
 }
 
 #[derive(Debug, PartialEq)]

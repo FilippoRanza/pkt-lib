@@ -1,3 +1,4 @@
+use crate::{IntoData, Packet};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::mpsc;
 
@@ -37,30 +38,27 @@ pub struct RecvInfo<T> {
     pub addr: SocketAddr,
 }
 
-pub fn create_tcp_listener<F, T, K>(ip: IpAddr, port: u16, f: &'static F) -> ListenerController<K>
+pub fn create_tcp_listener<T, K>(ip: IpAddr, port: u16) -> ListenerController<crate::Result<K>>
 where
-    F: Fn(&T) -> K + Sync,
-    T: Default + AsMut<[u8]> + Send,
-    K: Send + Sync + 'static,
+    T: Packet,
+    K: IntoData<T>,
 {
     let (info_trans, info_recv) = mpsc::channel();
     let (control_trans, control_recv) = mpsc::channel();
     let addr = SocketAddr::new(ip, port);
-    let handle = start_tcp_listener(addr, f, info_trans, control_recv);
+    let handle = start_tcp_listener(addr, info_trans, control_recv);
 
     ListenerController::new(control_trans, info_recv, handle)
 }
 
-fn start_tcp_listener<F, T, K>(
+fn start_tcp_listener<T, K>(
     addr: SocketAddr,
-    f: &'static F,
-    send: mpsc::Sender<RecvInfo<K>>,
+    send: mpsc::Sender<RecvInfo<crate::Result<K>>>,
     recv: mpsc::Receiver<()>,
 ) -> Handler
 where
-    F: Fn(&T) -> K + Sync,
-    T: Default + AsMut<[u8]> + Send,
-    K: Send + Sync + 'static,
+    T: Packet,
+    K: IntoData<T>,
 {
     tokio::spawn(async move {
         let listener = TcpListener::bind(addr).await?;
@@ -69,7 +67,7 @@ where
             let clone_send = send.clone();
             tokio::spawn(async move {
                 let (sock, addr) = accept;
-                handle_connetion(sock, addr, f, clone_send).await;
+                handle_connetion(sock, addr, clone_send).await;
             });
         }
 
@@ -77,22 +75,20 @@ where
     })
 }
 
-async fn handle_connetion<F, T, K>(
+async fn handle_connetion<T, K>(
     mut sock: TcpStream,
     addr: SocketAddr,
-    f: &'static F,
-    send: mpsc::Sender<RecvInfo<K>>,
+    send: mpsc::Sender<RecvInfo<crate::Result<K>>>,
 ) where
-    F: Fn(&T) -> K + Sync,
-    T: Default + AsMut<[u8]> + Send,
-    K: Send + Sync + 'static,
+    T: Packet,
+    K: IntoData<T>,
 {
     let mut buff = T::default();
 
     let res = sock.read(buff.as_mut()).await;
     match res {
         Ok(n) if n > 0 => {
-            let data = f(&buff);
+            let data = IntoData::into_data(&buff);
             let info = RecvInfo { data, addr };
             send.send(info).unwrap();
         }

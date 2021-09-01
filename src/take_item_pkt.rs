@@ -1,12 +1,28 @@
+use crate::{IntoData, Packet, Result};
+
 const PKT_SIZE: usize = 4;
 pub type TakeItemPkt = [u8; PKT_SIZE];
+impl Packet for TakeItemPkt {}
 
-pub fn make_take_item_pkt(item_id: u32) -> TakeItemPkt {
-    item_id.to_be_bytes()
+#[derive(Debug, PartialEq)]
+pub struct TakeItem {
+    pub id: u32,
 }
 
-pub fn parse_take_item_pkt(pkt: &TakeItemPkt) -> u32 {
-    u32::from_be_bytes(*pkt)
+impl IntoData<TakeItemPkt> for TakeItem {
+    fn into_data(p: &TakeItemPkt) -> Result<Self> {
+        let this = parse_take_item_pkt(p);
+        Ok(this)
+    }
+}
+
+pub fn make_take_item_pkt(take_item: &TakeItem) -> TakeItemPkt {
+    take_item.id.to_be_bytes()
+}
+
+pub fn parse_take_item_pkt(pkt: &TakeItemPkt) -> TakeItem {
+    let id = u32::from_be_bytes(*pkt);
+    TakeItem { id }
 }
 
 #[cfg(test)]
@@ -16,8 +32,9 @@ mod test {
 
     #[quickcheck]
     fn test_take_item_conversion(id: u32) -> bool {
-        let pkt = make_take_item_pkt(id);
+        let take_item = TakeItem { id };
+        let pkt = make_take_item_pkt(&take_item);
         let res = parse_take_item_pkt(&pkt);
-        res == id
+        res == take_item
     }
 }

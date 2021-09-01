@@ -1,12 +1,19 @@
-use crate::{insert_bytes, BuffConverter, ParseError, Result};
+use crate::{insert_bytes, BuffConverter, IntoData, Packet, ParseError, Result};
 
 const PKT_SIZE: usize = 1 + 4 + 4;
 pub type ArmStatePkt = [u8; PKT_SIZE];
+impl Packet for ArmStatePkt {}
 
 #[derive(Debug, PartialEq)]
 pub struct ArmInfo {
     pub arm_id: u32,
     pub status: ArmState,
+}
+
+impl IntoData<ArmStatePkt> for ArmInfo {
+    fn into_data(p: &ArmStatePkt) -> Result<Self> {
+        parse_arm_state_pkt(p)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -76,7 +83,6 @@ mod test {
         let result = parse_arm_state_pkt(&pkt).unwrap();
         result == correct
     }
-
 
     fn into_arm_info(waiting: bool, opt: Option<u32>, arm_id: u32) -> ArmInfo {
         let default = if waiting {
