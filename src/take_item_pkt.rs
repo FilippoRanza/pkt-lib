@@ -1,8 +1,6 @@
-use crate::{IntoData, Packet, Result};
+use crate::{packet_defs, IntoData, Result};
 
-const PKT_SIZE: usize = 4;
-pub type TakeItemPkt = [u8; PKT_SIZE];
-impl Packet for TakeItemPkt {}
+pub type TakeItemPkt = packet_defs::FourBytePkt;
 
 #[derive(Debug, PartialEq)]
 pub struct TakeItem {
