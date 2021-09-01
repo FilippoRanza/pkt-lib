@@ -11,9 +11,14 @@ pub struct ArmInfo {
 }
 
 impl IntoData<ArmStatePkt> for ArmInfo {
-    fn into_data(p: &ArmStatePkt) -> Result<Self> {
+    fn into_data(p: ArmStatePkt) -> Result<Self> {
         parse_arm_state_pkt(p)
     }
+
+    fn into_packet(self) -> ArmStatePkt {
+        make_arm_state_pkt(self)
+    }
+
 }
 
 #[derive(Debug, PartialEq)]
@@ -23,7 +28,7 @@ pub enum ArmState {
     Working(u32),
 }
 
-pub fn make_arm_state_pkt(state: &ArmInfo) -> ArmStatePkt {
+pub fn make_arm_state_pkt(state: ArmInfo) -> ArmStatePkt {
     let mut pkt = ArmStatePkt::default();
     match state.status {
         ArmState::Ready => ready_into_pkt(state.arm_id, &mut pkt),
@@ -33,7 +38,7 @@ pub fn make_arm_state_pkt(state: &ArmInfo) -> ArmStatePkt {
     pkt
 }
 
-pub fn parse_arm_state_pkt(pkt: &ArmStatePkt) -> Result<ArmInfo> {
+pub fn parse_arm_state_pkt(pkt: ArmStatePkt) -> Result<ArmInfo> {
     let mut converter = BuffConverter::new(&pkt[1..]);
     let working_val = converter.get_next_u32().unwrap();
     let arm_id = converter.get_next_u32().unwrap();
@@ -79,9 +84,10 @@ mod test {
     #[quickcheck]
     fn test_arm_state_conversion(waiting: bool, value: Option<u32>, arm_id: u32) -> bool {
         let correct = into_arm_info(waiting, value, arm_id);
-        let pkt = make_arm_state_pkt(&correct);
-        let result = parse_arm_state_pkt(&pkt).unwrap();
-        result == correct
+        let pkt = make_arm_state_pkt(correct);
+        let result = parse_arm_state_pkt(pkt).unwrap();
+        let expect = into_arm_info(waiting, value, arm_id);
+        result == expect
     }
 
     fn into_arm_info(waiting: bool, opt: Option<u32>, arm_id: u32) -> ArmInfo {

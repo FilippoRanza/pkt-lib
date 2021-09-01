@@ -11,8 +11,12 @@ pub enum ItemStatus {
 }
 
 impl IntoData<ItemReachPkt> for ItemStatus {
-    fn into_data(p: &ItemReachPkt) -> Result<Self> {
+    fn into_data(p: ItemReachPkt) -> Result<Self> {
         parse_reach_pkt(p)
+    }
+
+    fn into_packet(self) -> ItemReachPkt {
+        make_reach_pkt(self)
     }
 }
 
@@ -28,7 +32,7 @@ pub fn make_reach_pkt(reach: ItemStatus) -> ItemReachPkt {
     make_buffer(b, i, x, y)
 }
 
-pub fn parse_reach_pkt(pkt: &ItemReachPkt) -> Result<ItemStatus> {
+pub fn parse_reach_pkt(pkt: ItemReachPkt) -> Result<ItemStatus> {
     let byte = pkt[0];
 
     let mut convert = BuffConverter::new(&pkt[1..]);
@@ -87,14 +91,14 @@ mod test {
     fn test_unknown_byte() {
         let mut pkt = ItemReachPkt::default();
         pkt[0] = 2;
-        let result = parse_reach_pkt(&pkt);
+        let result = parse_reach_pkt(pkt);
         assert_eq!(result, Err(ParseError::Unknown { value: 2 }));
     }
 
     #[quickcheck]
     fn test_conversion(in_reach: bool, index: u32, pos_x: u32, pos_y: u32) -> bool {
         let input = make_item_status(in_reach, index, pos_x, pos_y);
-        let result = parse_reach_pkt(&make_reach_pkt(input)).unwrap();
+        let result = parse_reach_pkt(make_reach_pkt(input)).unwrap();
         let expect = make_item_status(in_reach, index, pos_x, pos_y);
         result == expect
     }

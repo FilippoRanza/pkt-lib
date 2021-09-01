@@ -10,18 +10,22 @@ pub struct TakeItem {
 }
 
 impl IntoData<TakeItemPkt> for TakeItem {
-    fn into_data(p: &TakeItemPkt) -> Result<Self> {
+    fn into_data(p: TakeItemPkt) -> Result<Self> {
         let this = parse_take_item_pkt(p);
         Ok(this)
     }
+
+    fn into_packet(self) -> TakeItemPkt {
+        make_take_item_pkt(self)
+    }
 }
 
-pub fn make_take_item_pkt(take_item: &TakeItem) -> TakeItemPkt {
+pub fn make_take_item_pkt(take_item: TakeItem) -> TakeItemPkt {
     take_item.id.to_be_bytes()
 }
 
-pub fn parse_take_item_pkt(pkt: &TakeItemPkt) -> TakeItem {
-    let id = u32::from_be_bytes(*pkt);
+pub fn parse_take_item_pkt(pkt: TakeItemPkt) -> TakeItem {
+    let id = u32::from_be_bytes(pkt);
     TakeItem { id }
 }
 
@@ -33,8 +37,8 @@ mod test {
     #[quickcheck]
     fn test_take_item_conversion(id: u32) -> bool {
         let take_item = TakeItem { id };
-        let pkt = make_take_item_pkt(&take_item);
-        let res = parse_take_item_pkt(&pkt);
-        res == take_item
+        let pkt = make_take_item_pkt(take_item);
+        let res = parse_take_item_pkt(pkt);
+        res.id == id
     }
 }

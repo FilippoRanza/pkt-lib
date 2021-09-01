@@ -52,17 +52,21 @@ pub use arm_state_pkt::{make_arm_state_pkt, parse_arm_state_pkt, ArmInfo, ArmSta
 #[cfg(listener)]
 pub mod listener;
 
+#[cfg(sender)]
+pub mod sender;
+
 pub trait IntoData<P>: Send + Sync + 'static
 where
     P: Packet,
 {
-    fn into_data(p: &P) -> Result<Self>
+    fn into_data(p: P) -> Result<Self>
     where
         Self: Sized;
+
+    fn into_packet(self) -> P;
 }
 
 pub trait Packet: Default + AsMut<[u8]> + Send {}
-pub trait Data: Send + Sync + 'static {}
 
 struct BuffConverter<'a> {
     buff: &'a [u8],

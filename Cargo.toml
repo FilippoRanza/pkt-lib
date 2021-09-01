@@ -14,3 +14,4 @@ quickcheck_macros = "1"
 
 [features]
 listener = ["tokio"]
+sender = []

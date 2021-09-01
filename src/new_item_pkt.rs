@@ -12,8 +12,12 @@ pub struct NewItemInfo {
 }
 
 impl IntoData<NewItemPkt> for NewItemInfo {
-    fn into_data(p: &NewItemPkt) -> Result<Self> {
+    fn into_data(p: NewItemPkt) -> Result<Self> {
         parse_new_item_pkt(p)
+    }
+
+    fn into_packet(self) -> NewItemPkt {
+        make_new_item_pkt(self)
     }
 }
 
@@ -26,7 +30,7 @@ pub fn make_new_item_pkt(info: NewItemInfo) -> NewItemPkt {
     buff
 }
 
-pub fn parse_new_item_pkt(buff: &NewItemPkt) -> Result<NewItemInfo> {
+pub fn parse_new_item_pkt(buff: NewItemPkt) -> Result<NewItemInfo> {
     let mut id = [0; 4];
     let mut loc = [0; 4];
 
@@ -46,7 +50,7 @@ mod test {
     #[quickcheck]
     fn test_conversion(id: u32, location: u32) -> bool {
         let info = NewItemInfo { id, location };
-        let result = parse_new_item_pkt(&make_new_item_pkt(info)).unwrap();
+        let result = parse_new_item_pkt(make_new_item_pkt(info)).unwrap();
         result.id == id && result.location == location
     }
 }
