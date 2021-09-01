@@ -50,6 +50,7 @@ mod arm_state_pkt;
 pub use arm_state_pkt::{make_arm_state_pkt, parse_arm_state_pkt, ArmInfo, ArmState, ArmStatePkt};
 
 mod pick_up_item_pkt;
+pub use pick_up_item_pkt::PickUpItem;
 
 mod packet_defs;
 
