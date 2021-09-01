@@ -18,7 +18,6 @@ impl IntoData<ArmStatePkt> for ArmInfo {
     fn into_packet(self) -> ArmStatePkt {
         make_arm_state_pkt(self)
     }
-
 }
 
 #[derive(Debug, PartialEq)]

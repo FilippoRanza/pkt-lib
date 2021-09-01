@@ -88,7 +88,7 @@ async fn handle_connetion<T, K>(
     let res = sock.read(buff.as_mut()).await;
     match res {
         Ok(n) if n > 0 => {
-            let data = IntoData::into_data(&buff);
+            let data = IntoData::into_data(buff);
             let info = RecvInfo { data, addr };
             send.send(info).unwrap();
         }
