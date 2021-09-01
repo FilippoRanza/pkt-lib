@@ -44,7 +44,7 @@ mod new_item_pkt;
 pub use new_item_pkt::{make_new_item_pkt, parse_new_item_pkt, NewItemInfo, NewItemPkt};
 
 mod take_item_pkt;
-pub use take_item_pkt::{make_take_item_pkt, parse_take_item_pkt, TakeItemPkt};
+pub use take_item_pkt::{make_take_item_pkt, parse_take_item_pkt, TakeItemPkt, TakeItem};
 
 mod arm_state_pkt;
 pub use arm_state_pkt::{make_arm_state_pkt, parse_arm_state_pkt, ArmInfo, ArmState, ArmStatePkt};
